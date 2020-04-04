@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>aspnet-Academy.Web-5792C8F8-6EA3-4C04-A706-BCFD8B0600F2</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="3.1.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Academy.DAL\Academy.DAL.csproj" />
+    <ProjectReference Include="..\Academy.Infrastructure\Academy.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
