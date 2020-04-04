@@ -4,7 +4,7 @@ using System;
 
 namespace Academy.Models.TrainingApplication
 {
-    public class WorkingExperience
+    public class WorkingExperience : Audit
     {
         public int WorkingExperienceId { get; set; }
         public string ApplicantId { get; set; }

@@ -2,7 +2,7 @@
 
 namespace Academy.Models.TrainingApplication
 {
-    public class AcademicQualification
+    public class AcademicQualification : Audit
     {
         public int AcademicQualificationId { get; set; }
         public string ApplicantId { get; set; }
