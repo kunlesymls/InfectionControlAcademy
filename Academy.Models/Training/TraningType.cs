@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using Academy.Models.Core;
+using System.Collections.Generic;
 
 namespace Academy.Models.Training
 {
-    public class TraningType
+    public class TraningType : Audit
     {
         public int TraningTypeId { get; set; }
         public string TraningCode { get; set; }

@@ -1,14 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using Academy.Models.Core;
+using System.Collections.Generic;
 
 namespace Academy.Models.Training
 {
-    public class Speaker
+    public class Speaker : Person
     {
         public int SpeakerId { get; set; }
         public string Title { get; set; }
-        public string FullName { get; set; }
-        public string ShortBio { get; set; }
-        public byte[] Image { get; set; }
-        public ICollection<TrainingSession> TrainingSessions { get; set; }
+        public string Honours { get; set; }
+        public ICollection<SessionSpeaker> SessionSpeakers { get; set; }
     }
 }
