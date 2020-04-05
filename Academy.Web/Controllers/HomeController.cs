@@ -33,6 +33,16 @@ namespace Academy.Web.Controllers
             return View();
         }
 
+        public IActionResult Training()
+        {
+            return View();
+        }
+
+        public IActionResult SignIn()
+        {
+            return View();
+        }
+
         public IActionResult Privacy()
         {
             return View();
