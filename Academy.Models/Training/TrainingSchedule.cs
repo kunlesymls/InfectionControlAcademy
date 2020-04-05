@@ -2,6 +2,7 @@
 using Academy.Models.TrainingApplication;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Academy.Models.Training
 {
@@ -13,7 +14,11 @@ namespace Academy.Models.Training
         public string Description { get; set; }
         public string Venue { get; set; }
         public string AdditionalInformation { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Fee { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
         public decimal RefundFee { get; set; }
         public bool HasCertificate { get; set; }
         public DateTime StartDate { get; set; }
