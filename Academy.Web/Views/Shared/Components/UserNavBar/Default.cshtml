@@ -1,0 +1,95 @@
+﻿@model Academy.ViewModels.MenuVm.UserNavBarVm
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+
+@if (Model != null)
+{
+    <header class="navbar navbar-fixed">
+        <!-- Navbar Header Start -->
+        <div class="navbar--header">
+            <!-- Logo Start -->
+            <a asp-controller="Home" asp-action="Index" class="logo text-center">
+                <img src="~/homeassets/img/collegeLogo.png" alt="" height="80" width="70">
+            </a>
+            <!-- Logo End -->
+            <!-- Sidebar Toggle Button Start -->
+            <a href="#" class="navbar--btn" data-toggle="sidebar" title="Toggle Sidebar">
+                <i class="fa fa-bars"></i>
+            </a>
+            <!-- Sidebar Toggle Button End -->
+        </div>
+        <!-- Navbar Header End -->
+        <!-- Sidebar Toggle Button Start -->
+        <a href="#" class="navbar--btn" data-toggle="sidebar" title="Toggle Sidebar">
+            <i class="fa fa-bars"></i>
+        </a>
+        <!-- Sidebar Toggle Button End -->
+
+
+        <div class="navbar--nav ml-auto">
+            <ul class="nav">
+                <!-- Nav User Start -->
+                <li class="nav-item dropdown nav--user online">
+                    <a href="#" class="nav-link" data-toggle="dropdown">
+                        <img src="@Model.Passport.ToCustomImage()" alt="" class="rounded-circle"
+                             onerror="this.src='/avatar-2-48.png';" height="50" width="50">
+                        <span>@Model.FullName</span>
+                        <i class="fa fa-angle-down"></i>
+                    </a>
+
+                    <ul class="dropdown-menu">
+                        <li><a href="#"><i class="far fa-user"></i>@Model.RoleName</a></li>
+                        @*<li><a href="mailbox_inbox.html"><i class="far fa-envelope"></i>Inbox</a></li>*@
+                        @*<li><a href="#"><i class="fa fa-cog"></i>Settings</a></li>*@
+                        <li class="dropdown-divider"></li>
+                        @*<li><a href="#"><i class="fa fa-lock"></i>Lock Screen</a></li>*@
+                        <li><a asp-area="Identity" asp-page="/Account/Logout"><i class="fa fa-power-off"></i>Sign Out</a></li>
+                    </ul>
+                </li>
+                <!-- Nav User End -->
+            </ul>
+        </div>
+
+    </header>
+}
+else
+{
+    <header class="navbar navbar-fixed">
+        <!-- Navbar Header Start -->
+        <div class="navbar--header">
+            <!-- Logo Start -->
+            <a href="index.html" class="logo">
+                <img src="~/adminassets/img/logo.png" alt="">
+            </a>
+            <!-- Logo End -->
+            <!-- Sidebar Toggle Button Start -->
+            <a href="#" class="navbar--btn" data-toggle="sidebar" title="Toggle Sidebar">
+                <i class="fa fa-bars"></i>
+            </a>
+            <!-- Sidebar Toggle Button End -->
+        </div>
+        <!-- Navbar Header End -->
+        <!-- Sidebar Toggle Button Start -->
+        <a href="#" class="navbar--btn" data-toggle="sidebar" title="Toggle Sidebar">
+            <i class="fa fa-bars"></i>
+        </a>
+        <!-- Sidebar Toggle Button End -->
+
+
+        <div class="navbar--nav ml-auto">
+            <ul class="nav">
+                <!-- Nav User Start -->
+                <li class="nav-item dropdown">
+                    <a asp-area="Identity" asp-page="/Account/Login">
+                        <span>Sign In &nbsp; &nbsp; &nbsp;</span>
+                        <span>&nbsp;</span>
+                    </a>                   
+                </li>
+                <!-- Nav User End -->
+            </ul>
+        </div>
+
+    </header>
+}
+

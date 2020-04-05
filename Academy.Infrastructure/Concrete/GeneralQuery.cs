@@ -1,5 +1,7 @@
 ﻿using Academy.DAL.Context;
 using Academy.Infrastructure.Abstractions;
+using Academy.Models.Core;
+using System.Linq;
 
 namespace Academy.Infrastructure.Concrete
 {
@@ -12,5 +14,9 @@ namespace Academy.Infrastructure.Concrete
             _db = db;
         }
 
+        public Staff GetStaffDetail(string userName)
+        {
+            return _db.Staffs.FirstOrDefault(x => x.Email.Equals(userName));
+        }
     }
 }

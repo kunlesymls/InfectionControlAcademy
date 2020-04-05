@@ -1,0 +1,48 @@
+﻿@model Academy.ViewModels.MenuVm.UserNavBarVm
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+@if (Model != null)
+{
+    <div class="sidebar--profile">
+        @*<div class="profile--img">
+                <a href="profile.html">
+                    <img src="~/adminassets/img/avatars/01_80x80.png" alt="" class="rounded-circle">
+                </a>
+            </div>*@
+
+        <div class="profile--name">
+            <a href="profile.html" class="btn-link">@Model.FullName</a>
+        </div>
+
+        <div class="profile--nav">
+            <ul class="nav">
+                @*<li class="nav-item">
+                    <a href="#" class="nav-link" title="User Profile">
+                        <i class="fa fa-user"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" title="Lock Screen">
+                        <i class="fa fa-lock"></i>
+                    </a>
+                </li>*@
+                @*<li class="nav-item">
+                        <a href="#" class="nav-link" title="Messages">
+                            <i class="fa fa-envelope"></i>
+                        </a>
+                    </li>*@
+                <li class="nav-item">
+                    <a asp-area="Identity" asp-page="/Account/Logout" class="nav-link" title="Logout">
+                        <i class="fa fa-sign-out-alt"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+}
+else
+{
+
+}
+

@@ -1,49 +1,160 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html dir="ltr" lang="en" class="no-outlines">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Academy.Web</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- ==== Document Title ==== -->
+    <title>CATIS - @ViewData["Title"]</title>
+
+    <!-- ==== Document Meta ==== -->
+    <meta name="author" content="">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+
+    <!-- ==== Favicon ==== -->
+    <link rel="shortcut icon" href="~/homeassets/img/favicon.ico" type="image/x-icon">
+
+    <!-- ==== Google Font ==== -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700%7CMontserrat:400,500">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="~/adminassets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/fontawesome-all.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/perfect-scrollbar.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/morris.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/select2.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/jquery-jvectormap.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/weather-icons.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/ion.rangeSlider.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/ion.rangeSlider.skinFlat.min.css">
+    <link rel="stylesheet" href="~/adminassets/css/style.css">
+    <link href="~/datatables.min.css" rel="stylesheet">
+
+    <link href="~/toastr.min.css" rel="stylesheet" />
+
+    @*<link rel="stylesheet" href="https://cdn.syncfusion.com/ej2/material.css" />
+    <script src="https://cdn.syncfusion.com/ej2/dist/ej2.min.js"></script>*@
+
+
+    <!-- Page Level Stylesheets -->
+
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Academy.Web</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
-                    <partial name="_LoginPartial" />
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2020 - Academy.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <!-- Wrapper Start -->
+    <div class="wrapper">
+        <!-- Navbar Start -->
+        @await Component.InvokeAsync("UserNavBar")
+        <!-- Navbar End -->
+        <!-- Sidebar Start -->
+        @await Component.InvokeAsync("AdminMenu")
+        <!-- Sidebar End -->
+        <!-- Main Container Start -->
+        <main class="main--container">
+            <!-- Page Header Start -->
+            <section class="page--header">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <!-- Page Title Start -->
+                            <h2 class="page--title h5">@ViewData["Title"]</h2>
+                            <!-- Page Title End -->
+
+                            <ul class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="index.html">Dashboard</a></li>
+                                <li class="breadcrumb-item active"><span>@ViewData["Title"]</span></li>
+                            </ul>
+                        </div>
+
+                        @*<div class="col-lg-6">
+                                <div class="summary--widget">
+                                    <div class="summary--item">
+                                        <p class="summary--chart" data-trigger="sparkline" data-type="bar" data-width="5" data-height="38" data-color="#009378">2,9,7,9,11,9,7,5,7,7,9,11</p>
+
+                                        <p class="summary--title">This Month</p>
+                                        <p class="summary--stats text-green">2,371,527</p>
+                                    </div>
+
+                                    <div class="summary--item">
+                                        <p class="summary--chart" data-trigger="sparkline" data-type="bar" data-width="5" data-height="38" data-color="#e16123">2,3,7,7,9,11,9,7,9,11,9,7</p>
+
+                                        <p class="summary--title">Last Month</p>
+                                        <p class="summary--stats text-orange">2,527,371</p>
+                                    </div>
+                                </div>
+                            </div>*@
+                    </div>
+                </div>
+            </section>
+            <!-- Page Header End -->
+            <!-- Main Content Start -->
+            <section class="main--content">
+                @RenderBody()
+            </section>
+            <!-- Main Content End -->
+            <!-- Main Footer Start -->
+            <footer class="main--footer main--footer-transparent">
+                <p>@DateTime.Now.Year Copyright &copy; <a href="#">College of Agriculture &amp; Technology (CATIS), Isan-Ekiti, Ekiti State, Nigeria</a>.  All Rights Reserved.</p>
+            </footer>
+            <!-- Main Footer End -->
+        </main>
+        <!-- Main Container End -->
+    </div>
+    <!-- Wrapper End -->
+    <!--Start of Tawk.to Script-->
+    <script type="text/javascript">
+        var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+        (function () {
+            var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+            s1.async = true;
+            s1.src = 'https://embed.tawk.to/5e6e1350eec7650c33201cec/default';
+            s1.charset = 'UTF-8';
+            s1.setAttribute('crossorigin', '*');
+            s0.parentNode.insertBefore(s1, s0);
+        })();
+    </script>
+    <!--End of Tawk.to Script-->
+
+    <!-- Scripts -->
+    <script src="~/adminassets/js/jquery.min.js"></script>
+    <script src="~/adminassets/js/jquery-ui.min.js"></script>
+    <script src="~/adminassets/js/bootstrap.bundle.min.js"></script>
+    <script src="~/adminassets/js/perfect-scrollbar.min.js"></script>
+    <script src="~/adminassets/js/jquery.sparkline.min.js"></script>
+    <script src="~/adminassets/js/raphael.min.js"></script>
+    <script src="~/adminassets/js/morris.min.js"></script>
+    <script src="~/adminassets/js/select2.min.js"></script>
+    <script src="~/adminassets/js/jquery-jvectormap.min.js"></script>
+    <script src="~/adminassets/js/jquery-jvectormap-world-mill.min.js"></script>
+    <script src="~/adminassets/js/ion.rangeSlider.min.js"></script>
+    <script src="~/adminassets/js/main.js"></script>
+
+    <script src="~/adminassets/sweet-alert-script.js"></script>
+    <script src="~/adminassets/sweetalert.min.js"></script>
+
+    <script src="~/toastr.min.js"></script>
+    <script src="~/datatables.min.js"></script>
+    <script src="~/dataTables.bootstrap4.min.js"></script>
+
+    <script type="text/javascript">
+        $(function () {
+            $('.sidebar--nav a').filter(function () { return this.href == location.href }).parent().addClass('active').siblings().removeClass('active');
+            $('.sidebar--nav a').click(function () {
+                $(this).parent().addClass('active').siblings().removeClass('active')
+            })
+            //$('.sidebar--nav li').click(function () {
+            //    $(this).parent().addClass('active open').siblings().removeClass('active open')
+            //})
+        })
+    </script>
+
+
+    <!-- Page Level Scripts -->
     @RenderSection("Scripts", required: false)
+    @*<ejs-scripts></ejs-scripts>*@
 </body>
 </html>

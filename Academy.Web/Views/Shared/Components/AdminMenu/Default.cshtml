@@ -1,0 +1,61 @@
+﻿@model IEnumerable<Academy.ViewModels.MenuVm.Menu>
+
+    <aside class="sidebar" data-trigger="scrollbar">
+        <!-- Sidebar Profile Start -->
+        @await Component.InvokeAsync("UserProfile")
+        <!-- Sidebar Profile End -->
+
+        <!-- Sidebar Navigation Start -->
+        <div class="sidebar--nav">
+            <ul>
+                @foreach (var cat in ModuleCategory.GetCategory())
+                {
+
+                    @if (Model.Any(x => x.CategoryName.Equals(cat)))
+                    {
+                        <li>
+                            <a href="#">@cat</a>
+                            <ul class="active">
+                                @foreach (var item in Model.Where(x => x.CategoryName.Equals(cat)))
+                                {
+                                    if (item.HasSub)
+                                    {
+                                        @*<li class="active open">*@
+                                        <li>
+                                            <a href="#">
+                                                <i class="@item.IconName"></i>
+                                                <span>@item.ModuleName</span>
+                                            </a>
+                                            <ul>
+                                                @if (item.MenuItems != null && item.MenuItems.Count() > 0)
+                                                {
+                                                    foreach (var sub in item.MenuItems)
+                                                    {
+                                                        <li><a asp-controller="@sub.ControllerValue" asp-action=@sub.ActionValue>@sub.DisplayValue</a></li>
+                                                    }
+                                                }
+                                            </ul>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li>
+                                            <a asp-controller="@item.ControllerValue" asp-action=@item.ActionValue>
+                                                <i class="@item.IconName"></i>
+                                                <span>@item.ModuleName</span>
+                                            </a>
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        </li>
+                    }
+                }
+            </ul>
+        </div>
+
+
+    </aside>
+
+
+
