@@ -1,0 +1,113 @@
+﻿@model IEnumerable<Academy.Models.TrainingApplication.ApplicantSchedule>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h2>Index</h2>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.IsQualified)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.HasPaid)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.HasCompletedSchedule)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ApplicationDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DateCompleted)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsRefunded)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsSuspended)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.GeneralComment)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Applicant)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.TrainingSchedule)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DateCreated)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DateLastUpdated)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CreatedBy)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.UpdatedBy)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsQualified)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.HasPaid)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.HasCompletedSchedule)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ApplicationDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DateCompleted)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsRefunded)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsSuspended)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.GeneralComment)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Applicant.ApplicantId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.TrainingSchedule.TrainingScheduleId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DateCreated)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DateLastUpdated)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreatedBy)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.UpdatedBy)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.ApplicantScheduleId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.ApplicantScheduleId">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.ApplicantScheduleId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

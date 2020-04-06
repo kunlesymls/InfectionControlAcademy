@@ -1,0 +1,102 @@
+﻿@model Academy.Models.TrainingApplication.ApplicantSchedule
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>ApplicantSchedule</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.IsQualified)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.IsQualified)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.HasPaid)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.HasPaid)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.HasCompletedSchedule)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.HasCompletedSchedule)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.ApplicationDate)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.ApplicationDate)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.DateCompleted)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.DateCompleted)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.IsRefunded)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.IsRefunded)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.IsSuspended)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.IsSuspended)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.GeneralComment)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.GeneralComment)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Applicant)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Applicant.ApplicantId)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.TrainingSchedule)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.TrainingSchedule.TrainingScheduleId)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.DateCreated)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.DateCreated)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.DateLastUpdated)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.DateLastUpdated)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.CreatedBy)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.CreatedBy)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.UpdatedBy)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.UpdatedBy)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.ApplicantScheduleId">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

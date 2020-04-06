@@ -1,0 +1,66 @@
+﻿@model Academy.Models.TrainingApplication.AcademicQualification
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>AcademicQualification</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.InstitutionName)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.InstitutionName)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.AwardedDegree)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.AwardedDegree)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.YearObtained)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.YearObtained)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Applicant)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Applicant.ApplicantId)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.DateCreated)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.DateCreated)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.DateLastUpdated)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.DateLastUpdated)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.CreatedBy)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.CreatedBy)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.UpdatedBy)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.UpdatedBy)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.AcademicQualificationId">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

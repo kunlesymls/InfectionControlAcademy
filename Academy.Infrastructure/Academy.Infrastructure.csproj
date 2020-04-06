@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Academy.DAL\Academy.DAL.csproj" />
     <ProjectReference Include="..\Academy.Models\Academy.Models.csproj" />
+    <ProjectReference Include="..\Academy.ViewModels\Academy.ViewModels.csproj" />
   </ItemGroup>
 
 </Project>
