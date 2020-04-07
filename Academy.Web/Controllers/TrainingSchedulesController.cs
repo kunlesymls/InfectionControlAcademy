@@ -1,160 +1,89 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Academy.Infrastructure.Abstractions;
+using Academy.Models.Training;
+using Academy.ViewModels.TraningVm;
+
+using AutoMapper;
+
+using Covid.Models.Constant;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Academy.DAL.Context;
-using Academy.Models.Training;
+
+using System.Threading.Tasks;
 
 namespace Academy.Web.Controllers
 {
-    public class TrainingSchedulesController : Controller
+    [Authorize(Roles = RoleName.Admin)]
+    public class TrainingSchedulesController : BaseController
     {
-        private readonly AcademyDbContext _context;
-
-        public TrainingSchedulesController(AcademyDbContext context)
+        private readonly IRepo<TrainingSchedule> _repo;
+        public TrainingSchedulesController(IRepo<TrainingSchedule> repo, ITrainingQuery trainingQuery,
+                                IMapper mapper, IGeneralQuery query) : base(mapper, query, trainingQuery)
         {
-            _context = context;
+            _repo = repo;
         }
+
 
         // GET: TrainingSchedules
         public async Task<IActionResult> Index()
         {
-            var academyDbContext = _context.TrainingSchedules.Include(t => t.TraningType);
-            return View(await academyDbContext.ToListAsync());
-        }
-
-        // GET: TrainingSchedules/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var trainingSchedule = await _context.TrainingSchedules
-                .Include(t => t.TraningType)
-                .FirstOrDefaultAsync(m => m.TrainingScheduleId == id);
-            if (trainingSchedule == null)
-            {
-                return NotFound();
-            }
-
-            return View(trainingSchedule);
-        }
-
-        // GET: TrainingSchedules/Create
-        public IActionResult Create()
-        {
-            ViewData["TraningTypeId"] = new SelectList(_context.TraningTypes, "TraningTypeId", "TraningTypeId");
+            ViewData["TraningTypeId"] = new SelectList(await _trainingQuery.TrainingTypeList(), "TraningTypeId", "TraningName");
             return View();
         }
 
-        // POST: TrainingSchedules/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("TrainingScheduleId,TraningTypeId,Subject,Description,Venue,AdditionalInformation,Fee,RefundFee,HasCertificate,StartDate,EndDate,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] TrainingSchedule trainingSchedule)
+        public async Task<IActionResult> GetIndex()
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(trainingSchedule);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["TraningTypeId"] = new SelectList(_context.TraningTypes, "TraningTypeId", "TraningTypeId", trainingSchedule.TraningTypeId);
-            return View(trainingSchedule);
+            var model = await _trainingQuery.TrainingScheduleList();
+            var data = model;
+            return Json(new { data });
         }
 
-        // GET: TrainingSchedules/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var trainingSchedule = await _context.TrainingSchedules.FindAsync(id);
-            if (trainingSchedule == null)
-            {
-                return NotFound();
-            }
-            ViewData["TraningTypeId"] = new SelectList(_context.TraningTypes, "TraningTypeId", "TraningTypeId", trainingSchedule.TraningTypeId);
-            return View(trainingSchedule);
+        [HttpGet]
+        public async Task<IActionResult> Save(int id)
+        {
+            var model = await _repo.GetById(id);
+            var data = _mapper.Map<TrainingScheduleVm>(model);
+            ViewData["TraningTypeId"] = new SelectList(await _trainingQuery.TrainingTypeList(), "TraningTypeId", "TraningName",
+                                                            model?.TraningTypeId);
+            return PartialView(data);
         }
 
-        // POST: TrainingSchedules/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("TrainingScheduleId,TraningTypeId,Subject,Description,Venue,AdditionalInformation,Fee,RefundFee,HasCertificate,StartDate,EndDate,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] TrainingSchedule trainingSchedule)
+        public async Task<IActionResult> Save(TrainingScheduleVm trainingScheduleVm)
         {
-            if (id != trainingSchedule.TrainingScheduleId)
-            {
-                return NotFound();
-            }
+            var model = _mapper.Map<TrainingSchedule>(trainingScheduleVm);
+            string message;
 
             if (ModelState.IsValid)
             {
-                try
+                if (model.TrainingScheduleId > 0)
                 {
-                    _context.Update(trainingSchedule);
-                    await _context.SaveChangesAsync();
+                    _repo.Update(model, userId);
+                    message = $"{model.Subject} Training Schedule Updated Successfully";
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!TrainingScheduleExists(trainingSchedule.TrainingScheduleId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    await _repo.Save(model, userId);
+                    message = $"{model.Subject} Training Schedule created Successfully";
                 }
-                return RedirectToAction(nameof(Index));
+
+                var response = await _repo.SaveContext();
+                return Json(new { response.status, message = response.status ? message : response.message });
             }
-            ViewData["TraningTypeId"] = new SelectList(_context.TraningTypes, "TraningTypeId", "TraningTypeId", trainingSchedule.TraningTypeId);
-            return View(trainingSchedule);
+            message = $"Bad Data is supplied please fill all compulsory field(s)";
+            return Json(new { status = false, message });
         }
 
-        // GET: TrainingSchedules/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var trainingSchedule = await _context.TrainingSchedules
-                .Include(t => t.TraningType)
-                .FirstOrDefaultAsync(m => m.TrainingScheduleId == id);
-            if (trainingSchedule == null)
-            {
-                return NotFound();
-            }
-
-            return View(trainingSchedule);
-        }
-
-        // POST: TrainingSchedules/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var trainingSchedule = await _context.TrainingSchedules.FindAsync(id);
-            _context.TrainingSchedules.Remove(trainingSchedule);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool TrainingScheduleExists(int id)
-        {
-            return _context.TrainingSchedules.Any(e => e.TrainingScheduleId == id);
+            await _repo.Delete(id);
+            var (status, message) = await _repo.SaveContext();
+            return Json(new { status, message = status ? "Training Schedule has been deleted successfully" : message });
         }
     }
 }

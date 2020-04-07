@@ -1,153 +1,82 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Academy.DAL.Context;
+﻿using Academy.Infrastructure.Abstractions;
 using Academy.Models.Training;
+using Academy.ViewModels.TraningVm;
+using AutoMapper;
+using Covid.Models.Constant;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Academy.Web.Controllers
 {
-    public class TraningTypesController : Controller
+    [Authorize(Roles = RoleName.Admin)]
+    public class TraningTypesController : BaseController
     {
-        private readonly AcademyDbContext _context;
-
-        public TraningTypesController(AcademyDbContext context)
+        private readonly IRepo<TraningType> _repo;
+        public TraningTypesController(IRepo<TraningType> repo, IMapper mapper, IGeneralQuery query) : base(mapper, query)
         {
-            _context = context;
+            _repo = repo;
         }
 
         // GET: TraningTypes
-        public async Task<IActionResult> Index()
-        {
-            return View(await _context.TraningTypes.ToListAsync());
-        }
-
-        // GET: TraningTypes/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var traningType = await _context.TraningTypes
-                .FirstOrDefaultAsync(m => m.TraningTypeId == id);
-            if (traningType == null)
-            {
-                return NotFound();
-            }
-
-            return View(traningType);
-        }
-
-        // GET: TraningTypes/Create
-        public IActionResult Create()
+        public IActionResult Index()
         {
             return View();
         }
 
-        // POST: TraningTypes/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("TraningTypeId,TraningCode,TraningName,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] TraningType traningType)
+        public async Task<IActionResult> GetIndex()
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(traningType);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(traningType);
+            var model = await _repo.GetAll();
+            var data = _mapper.Map<List<TraningTypeVm>>(model);
+            return Json(new { data });
         }
 
-        // GET: TraningTypes/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var traningType = await _context.TraningTypes.FindAsync(id);
-            if (traningType == null)
-            {
-                return NotFound();
-            }
-            return View(traningType);
+        [HttpGet]
+        public async Task<IActionResult> Save(int id)
+        {
+            var model = await _repo.GetById(id);
+            var data = _mapper.Map<TraningTypeVm>(model);
+            return PartialView(data);
         }
 
-        // POST: TraningTypes/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("TraningTypeId,TraningCode,TraningName,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] TraningType traningType)
+        public async Task<IActionResult> Save(TraningTypeVm traningTypeVm)
         {
-            if (id != traningType.TraningTypeId)
-            {
-                return NotFound();
-            }
+            var model = _mapper.Map<TraningType>(traningTypeVm);
+            string message;
 
             if (ModelState.IsValid)
             {
-                try
+                if (model.TraningTypeId > 0)
                 {
-                    _context.Update(traningType);
-                    await _context.SaveChangesAsync();
+                    _repo.Update(model, userId);
+                    message = $"{model.TraningName} Training Type Updated Successfully";
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!TraningTypeExists(traningType.TraningTypeId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    await _repo.Save(model, userId);
+                    message = $"{model.TraningName} Training Type created Successfully";
                 }
-                return RedirectToAction(nameof(Index));
+
+                var response = await _repo.SaveContext();
+                return Json(new { response.status, message = response.status ? message : response.message });
             }
-            return View(traningType);
+            message = $"Bad Data is supplied please fill all compulsory field(s)";
+            return Json(new { status = false, message });
         }
 
-        // GET: TraningTypes/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var traningType = await _context.TraningTypes
-                .FirstOrDefaultAsync(m => m.TraningTypeId == id);
-            if (traningType == null)
-            {
-                return NotFound();
-            }
-
-            return View(traningType);
-        }
-
-        // POST: TraningTypes/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var traningType = await _context.TraningTypes.FindAsync(id);
-            _context.TraningTypes.Remove(traningType);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+            await _repo.Delete(id);
+            var (status, message) = await _repo.SaveContext();
+            return Json(new { status, message = status ? "Training Type has been deleted successfully" : message });
 
-        private bool TraningTypeExists(int id)
-        {
-            return _context.TraningTypes.Any(e => e.TraningTypeId == id);
         }
     }
 }

@@ -15,14 +15,33 @@ namespace Academy.Web.Controllers
     {
         public string staffId;
         public string userId;
+        public string applicantId;
 
         public IMapper _mapper;
         public IGeneralQuery _query;
+        public readonly ITrainingQuery _trainingQuery;
+        public readonly IApplicantQuery _applicantQuery;
 
         public BaseController(IMapper mapper, IGeneralQuery query)
         {
             _mapper = mapper;
             _query = query;
+        }
+
+        public BaseController(IMapper mapper, IGeneralQuery query, ITrainingQuery trainingQuery) : this(mapper, query)
+        {
+            _trainingQuery = trainingQuery;
+        }
+
+        public BaseController(IMapper mapper, IGeneralQuery query, IApplicantQuery applicantQuery) : this(mapper, query)
+        {
+            _applicantQuery = applicantQuery;
+        }
+
+        public BaseController(IMapper mapper, IGeneralQuery query, ITrainingQuery trainingQuery, 
+                                IApplicantQuery applicantQuery) : this(mapper, query, trainingQuery)
+        {
+            _applicantQuery = applicantQuery;
         }
 
         public override void OnActionExecuting(ActionExecutingContext filterContext)

@@ -1,153 +1,85 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Academy.DAL.Context;
+﻿using Academy.Infrastructure.Abstractions;
 using Academy.Models.Training;
+using Academy.ViewModels.TraningVm;
+
+using AutoMapper;
+
+using Covid.Models.Constant;
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+using System.Threading.Tasks;
 
 namespace Academy.Web.Controllers
 {
-    public class SpeakersController : Controller
+    [Authorize(Roles = RoleName.Admin)]
+    public class SpeakersController : BaseController
     {
-        private readonly AcademyDbContext _context;
-
-        public SpeakersController(AcademyDbContext context)
+        private readonly IRepo<Speaker> _repo;
+        public SpeakersController(IRepo<Speaker> repo, ITrainingQuery trainingQuery,
+                                IMapper mapper, IGeneralQuery query) : base(mapper, query, trainingQuery)
         {
-            _context = context;
+            _repo = repo;
         }
 
         // GET: Speakers
-        public async Task<IActionResult> Index()
-        {
-            return View(await _context.Speakers.ToListAsync());
-        }
-
-        // GET: Speakers/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var speaker = await _context.Speakers
-                .FirstOrDefaultAsync(m => m.SpeakerId == id);
-            if (speaker == null)
-            {
-                return NotFound();
-            }
-
-            return View(speaker);
-        }
-
-        // GET: Speakers/Create
-        public IActionResult Create()
+        public IActionResult Index()
         {
             return View();
         }
 
-        // POST: Speakers/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("SpeakerId,Title,Honours,FirstName,MiddleName,LastName,Gender,Email,PhoneNumber,MaritalStatus,Address,TownOfBirth,Lga,StateOfOrigin,Nationality,CountryOfBirth,DateOfBirth,Passport,Signature,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] Speaker speaker)
+        public async Task<IActionResult> GetIndex()
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(speaker);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(speaker);
+            var model = await _trainingQuery.SpeakerList();
+            var data = model;
+            return Json(new { data });
         }
 
-        // GET: Speakers/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var speaker = await _context.Speakers.FindAsync(id);
-            if (speaker == null)
-            {
-                return NotFound();
-            }
-            return View(speaker);
+        [HttpGet]
+        public async Task<IActionResult> Save(int id)
+        {
+            var model = await _repo.GetById(id);
+            var data = _mapper.Map<SpeakerCreateEditVm>(model);
+            return PartialView(data);
         }
 
-        // POST: Speakers/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("SpeakerId,Title,Honours,FirstName,MiddleName,LastName,Gender,Email,PhoneNumber,MaritalStatus,Address,TownOfBirth,Lga,StateOfOrigin,Nationality,CountryOfBirth,DateOfBirth,Passport,Signature,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] Speaker speaker)
+        public async Task<IActionResult> Save(SpeakerCreateEditVm speakerVm)
         {
-            if (id != speaker.SpeakerId)
-            {
-                return NotFound();
-            }
+            var model = _mapper.Map<Speaker>(speakerVm);
+            string message;
 
             if (ModelState.IsValid)
             {
-                try
+                if (model.SpeakerId > 0)
                 {
-                    _context.Update(speaker);
-                    await _context.SaveChangesAsync();
+                    _repo.Update(model, userId);
+                    message = $"{model.FullName} Speaker Updated Successfully";
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!SpeakerExists(speaker.SpeakerId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    await _repo.Save(model, userId);
+                    message = $"{model.FullName} Speaker Type created Successfully";
                 }
-                return RedirectToAction(nameof(Index));
+
+                var response = await _repo.SaveContext();
+                return Json(new { response.status, message = response.status ? message : response.message });
             }
-            return View(speaker);
+            message = $"Bad Data is supplied please fill all compulsory field(s)";
+            return Json(new { status = false, message });
         }
 
-        // GET: Speakers/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var speaker = await _context.Speakers
-                .FirstOrDefaultAsync(m => m.SpeakerId == id);
-            if (speaker == null)
-            {
-                return NotFound();
-            }
-
-            return View(speaker);
-        }
-
-        // POST: Speakers/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var speaker = await _context.Speakers.FindAsync(id);
-            _context.Speakers.Remove(speaker);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+            await _repo.Delete(id);
+            var (status, message) = await _repo.SaveContext();
+            return Json(new { status, message = status ? "Speaker has been deleted successfully" : message });
 
-        private bool SpeakerExists(int id)
-        {
-            return _context.Speakers.Any(e => e.SpeakerId == id);
         }
     }
 }

@@ -83,6 +83,8 @@ namespace Academy.Web
             services.AddSingleton<IEmailService, EmailService>();
             services.AddScoped(typeof(IRepo<>), typeof(Repo<>));
             services.AddScoped(typeof(IGeneralQuery), typeof(GeneralQuery));
+            services.AddScoped(typeof(ITrainingQuery), typeof(TrainingQuery));
+            services.AddScoped(typeof(IApplicantQuery), typeof(ApplicantQuery));
 
 
             // Auto Mapper Configurations

@@ -1,160 +1,86 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Academy.Infrastructure.Abstractions;
+using Academy.Models.Training;
+using Academy.ViewModels.TraningVm;
+
+using AutoMapper;
+using Covid.Models.Constant;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Academy.DAL.Context;
-using Academy.Models.Training;
+
+using System.Threading.Tasks;
 
 namespace Academy.Web.Controllers
 {
-    public class TrainingSessionsController : Controller
+    [Authorize(Roles = RoleName.Admin)]
+    public class TrainingSessionsController : BaseController
     {
-        private readonly AcademyDbContext _context;
-
-        public TrainingSessionsController(AcademyDbContext context)
+        private readonly IRepo<TrainingSession> _repo;
+        public TrainingSessionsController(IRepo<TrainingSession> repo, IApplicantQuery applicantQuery,
+                    ITrainingQuery trainingQuery, IMapper mapper, IGeneralQuery query) : base(mapper, query, trainingQuery, applicantQuery)
         {
-            _context = context;
+            _repo = repo;
         }
 
         // GET: TrainingSessions
         public async Task<IActionResult> Index()
         {
-            var academyDbContext = _context.TrainingSessions.Include(t => t.TrainingSchedule);
-            return View(await academyDbContext.ToListAsync());
-        }
-
-        // GET: TrainingSessions/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var trainingSession = await _context.TrainingSessions
-                .Include(t => t.TrainingSchedule)
-                .FirstOrDefaultAsync(m => m.TrainingSessionId == id);
-            if (trainingSession == null)
-            {
-                return NotFound();
-            }
-
-            return View(trainingSession);
-        }
-
-        // GET: TrainingSessions/Create
-        public IActionResult Create()
-        {
-            ViewData["TrainingScheduleId"] = new SelectList(_context.TrainingSchedules, "TrainingScheduleId", "TrainingScheduleId");
+            ViewData["TrainingScheduleId"] = new SelectList(await _trainingQuery.TrainingScheduleList(), "TrainingScheduleId", "Subject");
             return View();
         }
 
-        // POST: TrainingSessions/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("TrainingSessionId,TrainingScheduleId,SessionName,Topic,Expectations,Location,Duration,SessionDate,StartTime,IsActive,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] TrainingSession trainingSession)
+        public async Task<IActionResult> GetIndex()
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(trainingSession);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["TrainingScheduleId"] = new SelectList(_context.TrainingSchedules, "TrainingScheduleId", "TrainingScheduleId", trainingSession.TrainingScheduleId);
-            return View(trainingSession);
+            var model = await _trainingQuery.TrainingSessionList();
+            var data = model;
+            return Json(new { data });
         }
 
-        // GET: TrainingSessions/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var trainingSession = await _context.TrainingSessions.FindAsync(id);
-            if (trainingSession == null)
-            {
-                return NotFound();
-            }
-            ViewData["TrainingScheduleId"] = new SelectList(_context.TrainingSchedules, "TrainingScheduleId", "TrainingScheduleId", trainingSession.TrainingScheduleId);
-            return View(trainingSession);
+        [HttpGet]
+        public async Task<IActionResult> Save(int id)
+        {
+            var model = await _repo.GetById(id);
+            var data = _mapper.Map<TrainingSessionVm>(model);
+            ViewData["TrainingScheduleId"] = new SelectList(await _trainingQuery.TrainingScheduleList(), 
+                                                "TrainingScheduleId", "Subject", model?.TrainingScheduleId);
+            return PartialView(data);
         }
 
-        // POST: TrainingSessions/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("TrainingSessionId,TrainingScheduleId,SessionName,Topic,Expectations,Location,Duration,SessionDate,StartTime,IsActive,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] TrainingSession trainingSession)
+        public async Task<IActionResult> Save(TrainingSessionVm trainingSessionVm)
         {
-            if (id != trainingSession.TrainingSessionId)
-            {
-                return NotFound();
-            }
+            var model = _mapper.Map<TrainingSession>(trainingSessionVm);
+            string message;
 
             if (ModelState.IsValid)
             {
-                try
+                if (model.TrainingSessionId > 0)
                 {
-                    _context.Update(trainingSession);
-                    await _context.SaveChangesAsync();
+                    _repo.Update(model, userId);
+                    message = $"{model.SessionName} Training Session Updated Successfully";
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!TrainingSessionExists(trainingSession.TrainingSessionId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    await _repo.Save(model, userId);
+                    message = $"{model.SessionName} Training Session created Successfully";
                 }
-                return RedirectToAction(nameof(Index));
+
+                var response = await _repo.SaveContext();
+                return Json(new { response.status, message = response.status ? message : response.message });
             }
-            ViewData["TrainingScheduleId"] = new SelectList(_context.TrainingSchedules, "TrainingScheduleId", "TrainingScheduleId", trainingSession.TrainingScheduleId);
-            return View(trainingSession);
+            message = $"Bad Data is supplied please fill all compulsory field(s)";
+            return Json(new { status = false, message });
         }
 
-        // GET: TrainingSessions/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var trainingSession = await _context.TrainingSessions
-                .Include(t => t.TrainingSchedule)
-                .FirstOrDefaultAsync(m => m.TrainingSessionId == id);
-            if (trainingSession == null)
-            {
-                return NotFound();
-            }
-
-            return View(trainingSession);
-        }
-
-        // POST: TrainingSessions/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var trainingSession = await _context.TrainingSessions.FindAsync(id);
-            _context.TrainingSessions.Remove(trainingSession);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool TrainingSessionExists(int id)
-        {
-            return _context.TrainingSessions.Any(e => e.TrainingSessionId == id);
+            await _repo.Delete(id);
+            var (status, message) = await _repo.SaveContext();
+            return Json(new { status, message = status ? "Training Session has been deleted successfully" : message });
         }
     }
 }

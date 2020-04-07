@@ -1,166 +1,91 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Academy.Infrastructure.Abstractions;
+using Academy.Models.Training;
+using Academy.ViewModels.TraningVm;
+
+using AutoMapper;
+
+using Covid.Models.Constant;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Academy.DAL.Context;
-using Academy.Models.Training;
+
+using System.Threading.Tasks;
 
 namespace Academy.Web.Controllers
 {
-    public class SessionSpeakersController : Controller
+    [Authorize(Roles = RoleName.Admin)]
+    public class SessionSpeakersController : BaseController
     {
-        private readonly AcademyDbContext _context;
-
-        public SessionSpeakersController(AcademyDbContext context)
+        private readonly IRepo<SessionSpeaker> _repo;
+        public SessionSpeakersController(IRepo<SessionSpeaker> repo, ITrainingQuery trainingQuery,
+                                IMapper mapper, IGeneralQuery query) : base(mapper, query, trainingQuery)
         {
-            _context = context;
+            _repo = repo;
         }
 
         // GET: SessionSpeakers
         public async Task<IActionResult> Index()
         {
-            var academyDbContext = _context.SessionSpeakers.Include(s => s.Speaker).Include(s => s.TrainingSession);
-            return View(await academyDbContext.ToListAsync());
-        }
-
-        // GET: SessionSpeakers/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var sessionSpeaker = await _context.SessionSpeakers
-                .Include(s => s.Speaker)
-                .Include(s => s.TrainingSession)
-                .FirstOrDefaultAsync(m => m.SessionSpeakerId == id);
-            if (sessionSpeaker == null)
-            {
-                return NotFound();
-            }
-
-            return View(sessionSpeaker);
-        }
-
-        // GET: SessionSpeakers/Create
-        public IActionResult Create()
-        {
-            ViewData["SpeakerId"] = new SelectList(_context.Speakers, "SpeakerId", "SpeakerId");
-            ViewData["TrainingSessionId"] = new SelectList(_context.TrainingSessions, "TrainingSessionId", "TrainingSessionId");
+            ViewData["SpeakerId"] = new SelectList(await _trainingQuery.SpeakerList(), "SpeakerId", "FullName");
+            ViewData["TrainingSessionId"] = new SelectList(await _trainingQuery.TrainingSessionList(), "TrainingSessionId", "SessionName");
             return View();
         }
 
-        // POST: SessionSpeakers/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("SessionSpeakerId,TrainingSessionId,SpeakerId,IsLeadSpeaker")] SessionSpeaker sessionSpeaker)
+        public async Task<IActionResult> GetIndex()
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(sessionSpeaker);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["SpeakerId"] = new SelectList(_context.Speakers, "SpeakerId", "SpeakerId", sessionSpeaker.SpeakerId);
-            ViewData["TrainingSessionId"] = new SelectList(_context.TrainingSessions, "TrainingSessionId", "TrainingSessionId", sessionSpeaker.TrainingSessionId);
-            return View(sessionSpeaker);
+            var model = await _trainingQuery.SessionSpeakerList();
+            var data = model;
+            return Json(new { data });
         }
 
-        // GET: SessionSpeakers/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var sessionSpeaker = await _context.SessionSpeakers.FindAsync(id);
-            if (sessionSpeaker == null)
-            {
-                return NotFound();
-            }
-            ViewData["SpeakerId"] = new SelectList(_context.Speakers, "SpeakerId", "SpeakerId", sessionSpeaker.SpeakerId);
-            ViewData["TrainingSessionId"] = new SelectList(_context.TrainingSessions, "TrainingSessionId", "TrainingSessionId", sessionSpeaker.TrainingSessionId);
-            return View(sessionSpeaker);
+        [HttpGet]
+        public async Task<IActionResult> Save(int id)
+        {
+            var model = await _repo.GetById(id);
+            var data = _mapper.Map<SessionSpeakerVm>(model);
+            ViewData["SpeakerId"] = new SelectList(await _trainingQuery.SpeakerList(), "SpeakerId", "FullName", model?.SpeakerId);
+            ViewData["TrainingSessionId"] = new SelectList(await _trainingQuery.TrainingSessionList(),
+                                                "TrainingSessionId", "SessionName", model?.TrainingSessionId);
+            return PartialView(data);
         }
 
-        // POST: SessionSpeakers/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("SessionSpeakerId,TrainingSessionId,SpeakerId,IsLeadSpeaker")] SessionSpeaker sessionSpeaker)
+        public async Task<IActionResult> Save(SessionSpeakerVm sessionSpeakerVm)
         {
-            if (id != sessionSpeaker.SessionSpeakerId)
-            {
-                return NotFound();
-            }
+            var model = _mapper.Map<SessionSpeaker>(sessionSpeakerVm);
+            string message;
 
             if (ModelState.IsValid)
             {
-                try
+                if (model.SessionSpeakerId > 0)
                 {
-                    _context.Update(sessionSpeaker);
-                    await _context.SaveChangesAsync();
+                    _repo.Update(model, userId);
+                    message = $"Session Speaker Updated Successfully";
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!SessionSpeakerExists(sessionSpeaker.SessionSpeakerId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    await _repo.Save(model, userId);
+                    message = $"Session Speaker created Successfully";
                 }
-                return RedirectToAction(nameof(Index));
+
+                var response = await _repo.SaveContext();
+                return Json(new { response.status, message = response.status ? message : response.message });
             }
-            ViewData["SpeakerId"] = new SelectList(_context.Speakers, "SpeakerId", "SpeakerId", sessionSpeaker.SpeakerId);
-            ViewData["TrainingSessionId"] = new SelectList(_context.TrainingSessions, "TrainingSessionId", "TrainingSessionId", sessionSpeaker.TrainingSessionId);
-            return View(sessionSpeaker);
+            message = $"Bad Data is supplied please fill all compulsory field(s)";
+            return Json(new { status = false, message });
         }
 
-        // GET: SessionSpeakers/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var sessionSpeaker = await _context.SessionSpeakers
-                .Include(s => s.Speaker)
-                .Include(s => s.TrainingSession)
-                .FirstOrDefaultAsync(m => m.SessionSpeakerId == id);
-            if (sessionSpeaker == null)
-            {
-                return NotFound();
-            }
-
-            return View(sessionSpeaker);
-        }
-
-        // POST: SessionSpeakers/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var sessionSpeaker = await _context.SessionSpeakers.FindAsync(id);
-            _context.SessionSpeakers.Remove(sessionSpeaker);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+            await _repo.Delete(id);
+            var (status, message) = await _repo.SaveContext();
+            return Json(new { status, message = status ? "Session Speaker has been deleted successfully" : message });
 
-        private bool SessionSpeakerExists(int id)
-        {
-            return _context.SessionSpeakers.Any(e => e.SessionSpeakerId == id);
         }
     }
 }

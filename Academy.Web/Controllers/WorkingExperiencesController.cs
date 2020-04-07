@@ -1,160 +1,83 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Academy.DAL.Context;
+﻿using Academy.Infrastructure.Abstractions;
 using Academy.Models.TrainingApplication;
+using Academy.ViewModels.ApplicationVm;
+
+using AutoMapper;
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+using System.Threading.Tasks;
 
 namespace Academy.Web.Controllers
 {
-    public class WorkingExperiencesController : Controller
+    [Authorize()]
+    public class WorkingExperiencesController : BaseController
     {
-        private readonly AcademyDbContext _context;
-
-        public WorkingExperiencesController(AcademyDbContext context)
+        private readonly IRepo<WorkingExperience> _repo;
+        public WorkingExperiencesController(IRepo<WorkingExperience> repo, IApplicantQuery applicantQuery,
+                                IMapper mapper, IGeneralQuery query) : base(mapper, query, applicantQuery)
         {
-            _context = context;
+            _repo = repo;
         }
 
         // GET: WorkingExperiences
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            var academyDbContext = _context.WorkingExperiences.Include(w => w.Applicant);
-            return View(await academyDbContext.ToListAsync());
-        }
-
-        // GET: WorkingExperiences/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var workingExperience = await _context.WorkingExperiences
-                .Include(w => w.Applicant)
-                .FirstOrDefaultAsync(m => m.WorkingExperienceId == id);
-            if (workingExperience == null)
-            {
-                return NotFound();
-            }
-
-            return View(workingExperience);
-        }
-
-        // GET: WorkingExperiences/Create
-        public IActionResult Create()
-        {
-            ViewData["ApplicantId"] = new SelectList(_context.Applicants, "ApplicantId", "ApplicantId");
             return View();
         }
 
-        // POST: WorkingExperiences/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("WorkingExperienceId,ApplicantId,Organization,Role,Location,IsCurrent,EmploymentType,FromDate,ToDate,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] WorkingExperience workingExperience)
+        public async Task<IActionResult> GetIndex()
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(workingExperience);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["ApplicantId"] = new SelectList(_context.Applicants, "ApplicantId", "ApplicantId", workingExperience.ApplicantId);
-            return View(workingExperience);
+            var model = await _applicantQuery.WorkingExperienceList(applicantId);
+            var data = model;
+            return Json(new { data });
         }
 
-        // GET: WorkingExperiences/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var workingExperience = await _context.WorkingExperiences.FindAsync(id);
-            if (workingExperience == null)
-            {
-                return NotFound();
-            }
-            ViewData["ApplicantId"] = new SelectList(_context.Applicants, "ApplicantId", "ApplicantId", workingExperience.ApplicantId);
-            return View(workingExperience);
+        [HttpGet]
+        public async Task<IActionResult> Save(int id)
+        {
+            var model = await _repo.GetById(id);
+            var data = _mapper.Map<WorkingExperienceVm>(model);
+            return PartialView(data);
         }
 
-        // POST: WorkingExperiences/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("WorkingExperienceId,ApplicantId,Organization,Role,Location,IsCurrent,EmploymentType,FromDate,ToDate,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] WorkingExperience workingExperience)
+        public async Task<IActionResult> Save(WorkingExperienceVm workingExperienceVm)
         {
-            if (id != workingExperience.WorkingExperienceId)
-            {
-                return NotFound();
-            }
+            var model = _mapper.Map<WorkingExperience>(workingExperienceVm);
+            string message;
 
             if (ModelState.IsValid)
             {
-                try
+                if (model.WorkingExperienceId > 0)
                 {
-                    _context.Update(workingExperience);
-                    await _context.SaveChangesAsync();
+                    _repo.Update(model, userId);
+                    message = $"{model.Organization} Working Experience Updated Successfully";
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!WorkingExperienceExists(workingExperience.WorkingExperienceId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    await _repo.Save(model, userId);
+                    message = $"{model.Organization} Working Experience created Successfully";
                 }
-                return RedirectToAction(nameof(Index));
+
+                var response = await _repo.SaveContext();
+                return Json(new { response.status, message = response.status ? message : response.message });
             }
-            ViewData["ApplicantId"] = new SelectList(_context.Applicants, "ApplicantId", "ApplicantId", workingExperience.ApplicantId);
-            return View(workingExperience);
+            message = $"Bad Data is supplied please fill all compulsory field(s)";
+            return Json(new { status = false, message });
         }
 
-        // GET: WorkingExperiences/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var workingExperience = await _context.WorkingExperiences
-                .Include(w => w.Applicant)
-                .FirstOrDefaultAsync(m => m.WorkingExperienceId == id);
-            if (workingExperience == null)
-            {
-                return NotFound();
-            }
-
-            return View(workingExperience);
-        }
-
-        // POST: WorkingExperiences/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var workingExperience = await _context.WorkingExperiences.FindAsync(id);
-            _context.WorkingExperiences.Remove(workingExperience);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+            await _repo.Delete(id);
+            var (status, message) = await _repo.SaveContext();
+            return Json(new { status, message = status ? "Working Experience has been deleted successfully" : message });
 
-        private bool WorkingExperienceExists(int id)
-        {
-            return _context.WorkingExperiences.Any(e => e.WorkingExperienceId == id);
         }
     }
 }

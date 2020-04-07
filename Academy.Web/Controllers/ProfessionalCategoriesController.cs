@@ -1,153 +1,84 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Academy.DAL.Context;
+﻿using Academy.Infrastructure.Abstractions;
 using Academy.Models.Core;
+using Academy.ViewModels.CoreVm;
+
+using AutoMapper;
+
+using Covid.Models.Constant;
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+using System.Threading.Tasks;
 
 namespace Academy.Web.Controllers
 {
-    public class ProfessionalCategoriesController : Controller
+    [Authorize(Roles = RoleName.Admin)]
+    public class ProfessionalCategoriesController : BaseController
     {
-        private readonly AcademyDbContext _context;
-
-        public ProfessionalCategoriesController(AcademyDbContext context)
+        private readonly IRepo<ProfessionalCategory> _repo;
+        public ProfessionalCategoriesController(IRepo<ProfessionalCategory> repo, IMapper mapper, IGeneralQuery query) : base(mapper, query)
         {
-            _context = context;
+            _repo = repo;
         }
 
         // GET: ProfessionalCategories
-        public async Task<IActionResult> Index()
-        {
-            return View(await _context.ProfessionalCategories.ToListAsync());
-        }
-
-        // GET: ProfessionalCategories/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var professionalCategory = await _context.ProfessionalCategories
-                .FirstOrDefaultAsync(m => m.ProfessionalCategoryId == id);
-            if (professionalCategory == null)
-            {
-                return NotFound();
-            }
-
-            return View(professionalCategory);
-        }
-
-        // GET: ProfessionalCategories/Create
-        public IActionResult Create()
+        public IActionResult Index()
         {
             return View();
         }
 
-        // POST: ProfessionalCategories/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ProfessionalCategoryId,ProfessionalCode,ProfessionalName,IsVisible,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] ProfessionalCategory professionalCategory)
+        public async Task<IActionResult> GetIndex()
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(professionalCategory);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(professionalCategory);
+            var model = await _query.ProfessionalCategoryList();
+            var data = model;
+            return Json(new { data });
         }
 
-        // GET: ProfessionalCategories/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var professionalCategory = await _context.ProfessionalCategories.FindAsync(id);
-            if (professionalCategory == null)
-            {
-                return NotFound();
-            }
-            return View(professionalCategory);
+        [HttpGet]
+        public async Task<IActionResult> Save(int id)
+        {
+            var model = await _repo.GetById(id);
+            var data = _mapper.Map<ProfessionalCategoryVm>(model);
+            return PartialView(data);
         }
 
-        // POST: ProfessionalCategories/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ProfessionalCategoryId,ProfessionalCode,ProfessionalName,IsVisible,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] ProfessionalCategory professionalCategory)
+        public async Task<IActionResult> Save(ProfessionalCategoryVm categoryVm)
         {
-            if (id != professionalCategory.ProfessionalCategoryId)
-            {
-                return NotFound();
-            }
+            var model = _mapper.Map<ProfessionalCategory>(categoryVm);
+            string message;
 
             if (ModelState.IsValid)
             {
-                try
+                if (model.ProfessionalCategoryId > 0)
                 {
-                    _context.Update(professionalCategory);
-                    await _context.SaveChangesAsync();
+                    _repo.Update(model, userId);
+                    message = $"{model.ProfessionalName} Professional Category Updated Successfully";
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!ProfessionalCategoryExists(professionalCategory.ProfessionalCategoryId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    await _repo.Save(model, userId);
+                    message = $"{model.ProfessionalName} Professional Category created Successfully";
                 }
-                return RedirectToAction(nameof(Index));
+
+                var response = await _repo.SaveContext();
+                return Json(new { response.status, message = response.status ? message : response.message });
             }
-            return View(professionalCategory);
+            message = $"Bad Data is supplied please fill all compulsory field(s)";
+            return Json(new { status = false, message });
         }
 
-        // GET: ProfessionalCategories/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var professionalCategory = await _context.ProfessionalCategories
-                .FirstOrDefaultAsync(m => m.ProfessionalCategoryId == id);
-            if (professionalCategory == null)
-            {
-                return NotFound();
-            }
-
-            return View(professionalCategory);
-        }
-
-        // POST: ProfessionalCategories/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var professionalCategory = await _context.ProfessionalCategories.FindAsync(id);
-            _context.ProfessionalCategories.Remove(professionalCategory);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+            await _repo.Delete(id);
+            var (status, message) = await _repo.SaveContext();
+            return Json(new { status, message = status ? "Professional Category has been deleted successfully" : message });
 
-        private bool ProfessionalCategoryExists(int id)
-        {
-            return _context.ProfessionalCategories.Any(e => e.ProfessionalCategoryId == id);
         }
     }
 }

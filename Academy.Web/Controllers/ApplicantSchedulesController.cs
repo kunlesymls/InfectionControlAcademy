@@ -7,160 +7,84 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Academy.DAL.Context;
 using Academy.Models.TrainingApplication;
+using Covid.Models.Constant;
+using Microsoft.AspNetCore.Authorization;
+using Academy.Infrastructure.Abstractions;
+using AutoMapper;
+using Academy.ViewModels.ApplicationVm;
 
 namespace Academy.Web.Controllers
 {
-    public class ApplicantSchedulesController : Controller
+    [Authorize(Roles = RoleName.Admin)]
+    public class ApplicantSchedulesController : BaseController
     {
-        private readonly AcademyDbContext _context;
-
-        public ApplicantSchedulesController(AcademyDbContext context)
+        private readonly IRepo<ApplicantSchedule> _repo;
+        public ApplicantSchedulesController(IRepo<ApplicantSchedule> repo, ITrainingQuery trainingQuery,
+                                IApplicantQuery applicantQuery, IMapper mapper, IGeneralQuery query) 
+                                    : base(mapper, query, trainingQuery, applicantQuery)
         {
-            _context = context;
+            _repo = repo;
         }
 
         // GET: ApplicantSchedules
         public async Task<IActionResult> Index()
         {
-            var academyDbContext = _context.ApplicantSchedules.Include(a => a.Applicant).Include(a => a.TrainingSchedule);
-            return View(await academyDbContext.ToListAsync());
-        }
-
-        // GET: ApplicantSchedules/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var applicantSchedule = await _context.ApplicantSchedules
-                .Include(a => a.Applicant)
-                .Include(a => a.TrainingSchedule)
-                .FirstOrDefaultAsync(m => m.ApplicantScheduleId == id);
-            if (applicantSchedule == null)
-            {
-                return NotFound();
-            }
-
-            return View(applicantSchedule);
-        }
-
-        // GET: ApplicantSchedules/Create
-        public IActionResult Create()
-        {
-            ViewData["ApplicantId"] = new SelectList(_context.Applicants, "ApplicantId", "ApplicantId");
-            ViewData["TrainingScheduleId"] = new SelectList(_context.TrainingSchedules, "TrainingScheduleId", "TrainingScheduleId");
+            ViewData["TrainingScheduleId"] = new SelectList(await _trainingQuery.TrainingScheduleList(), "TrainingScheduleId", "Subject");
             return View();
         }
 
-        // POST: ApplicantSchedules/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ApplicantScheduleId,ApplicantId,TrainingScheduleId,IsQualified,HasPaid,HasCompletedSchedule,ApplicationDate,DateCompleted,IsRefunded,IsSuspended,GeneralComment,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] ApplicantSchedule applicantSchedule)
+        public async Task<IActionResult> GetIndex()
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(applicantSchedule);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["ApplicantId"] = new SelectList(_context.Applicants, "ApplicantId", "ApplicantId", applicantSchedule.ApplicantId);
-            ViewData["TrainingScheduleId"] = new SelectList(_context.TrainingSchedules, "TrainingScheduleId", "TrainingScheduleId", applicantSchedule.TrainingScheduleId);
-            return View(applicantSchedule);
+            var model = await _applicantQuery.ApplicantScheduleList(applicantId);
+            var data = model;
+            return Json(new { data });
         }
 
-        // GET: ApplicantSchedules/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var applicantSchedule = await _context.ApplicantSchedules.FindAsync(id);
-            if (applicantSchedule == null)
-            {
-                return NotFound();
-            }
-            ViewData["ApplicantId"] = new SelectList(_context.Applicants, "ApplicantId", "ApplicantId", applicantSchedule.ApplicantId);
-            ViewData["TrainingScheduleId"] = new SelectList(_context.TrainingSchedules, "TrainingScheduleId", "TrainingScheduleId", applicantSchedule.TrainingScheduleId);
-            return View(applicantSchedule);
+        [HttpGet]
+        public async Task<IActionResult> Save(int id)
+        {
+            var model = await _repo.GetById(id);
+            var data = _mapper.Map<ApplicantScheduleCreateVm>(model);
+            ViewData["TrainingScheduleId"] = new SelectList(await _trainingQuery.TrainingScheduleList(), 
+                                                "TrainingScheduleId", "Subject", model?.TrainingScheduleId);
+            return PartialView(data);
         }
 
-        // POST: ApplicantSchedules/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ApplicantScheduleId,ApplicantId,TrainingScheduleId,IsQualified,HasPaid,HasCompletedSchedule,ApplicationDate,DateCompleted,IsRefunded,IsSuspended,GeneralComment,DateCreated,DateLastUpdated,CreatedBy,UpdatedBy")] ApplicantSchedule applicantSchedule)
+        public async Task<IActionResult> Save(ApplicantScheduleCreateVm scheduleCreateVm)
         {
-            if (id != applicantSchedule.ApplicantScheduleId)
-            {
-                return NotFound();
-            }
+            var model = _mapper.Map<ApplicantSchedule>(scheduleCreateVm);
+            string message;
 
             if (ModelState.IsValid)
             {
-                try
+                if (model.ApplicantScheduleId > 0)
                 {
-                    _context.Update(applicantSchedule);
-                    await _context.SaveChangesAsync();
+                    _repo.Update(model, userId);
+                    message = $"Training Schedule Updated Successfully";
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!ApplicantScheduleExists(applicantSchedule.ApplicantScheduleId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    await _repo.Save(model, userId);
+                    message = $"Training Schedule created Successfully";
                 }
-                return RedirectToAction(nameof(Index));
+
+                var response = await _repo.SaveContext();
+                return Json(new { response.status, message = response.status ? message : response.message });
             }
-            ViewData["ApplicantId"] = new SelectList(_context.Applicants, "ApplicantId", "ApplicantId", applicantSchedule.ApplicantId);
-            ViewData["TrainingScheduleId"] = new SelectList(_context.TrainingSchedules, "TrainingScheduleId", "TrainingScheduleId", applicantSchedule.TrainingScheduleId);
-            return View(applicantSchedule);
+            message = $"Bad Data is supplied please fill all compulsory field(s)";
+            return Json(new { status = false, message });
         }
 
-        // GET: ApplicantSchedules/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var applicantSchedule = await _context.ApplicantSchedules
-                .Include(a => a.Applicant)
-                .Include(a => a.TrainingSchedule)
-                .FirstOrDefaultAsync(m => m.ApplicantScheduleId == id);
-            if (applicantSchedule == null)
-            {
-                return NotFound();
-            }
-
-            return View(applicantSchedule);
-        }
-
-        // POST: ApplicantSchedules/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var applicantSchedule = await _context.ApplicantSchedules.FindAsync(id);
-            _context.ApplicantSchedules.Remove(applicantSchedule);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool ApplicantScheduleExists(int id)
-        {
-            return _context.ApplicantSchedules.Any(e => e.ApplicantScheduleId == id);
+            await _repo.Delete(id);
+            var (status, message) = await _repo.SaveContext();
+            return Json(new { status, message = status ? "Training Schedule has been deleted successfully" : message });
         }
     }
 }

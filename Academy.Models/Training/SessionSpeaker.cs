@@ -1,6 +1,8 @@
-﻿namespace Academy.Models.Training
+﻿using Academy.Models.Core;
+
+namespace Academy.Models.Training
 {
-    public class SessionSpeaker
+    public class SessionSpeaker : Audit
     {
         public int SessionSpeakerId { get; set; }
         public int TrainingSessionId { get; set; }
